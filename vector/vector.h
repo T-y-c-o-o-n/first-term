@@ -1,62 +1,245 @@
-template <typename T>
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <algorithm>
+#include <vector>
+
+template<typename T>
 struct vector
 {
-    typedef T* iterator;
-    typedef T const* const_iterator;
+public:
+	typedef T *iterator;
+	typedef T const *const_iterator;
 
-    vector();                               // O(1) nothrow
-    vector(vector const&);                  // O(N) strong
-    vector& operator=(vector const& other); // O(N) strong
+	vector()
+		: _data(nullptr), _size(0), _capacity(0)
+	{}
 
-    ~vector();                              // O(N) nothrow
+	vector(vector const &other)
+		: vector()
+	{
+		if (!other.empty()) {
+			vector temp;
+			temp.reserve(other.size());
+			for (auto it = other.begin(); it != other.end(); ++it) {
+				temp.push_back(*it);
+			}
+			swap(temp);
+		}
+	}
 
-    T& operator[](size_t i);                // O(1) nothrow
-    T const& operator[](size_t i) const;    // O(1) nothrow
+	vector &operator=(vector rhs)
+	{
+		swap(rhs);
+		return *this;
+	}
 
-    T* data();                              // O(1) nothrow
-    T const* data() const;                  // O(1) nothrow
-    size_t size() const;                    // O(1) nothrow
+	~vector()
+	{
+		clear();
+		operator delete(_data);
+	}
 
-    T& front();                             // O(1) nothrow
-    T const& front() const;                 // O(1) nothrow
+	T &operator[](size_t i)
+	{
+		return _data[i];
+	}
 
-    T& back();                              // O(1) nothrow
-    T const& back() const;                  // O(1) nothrow
-    void push_back(T const&);               // O(1)* strong
-    void pop_back();                        // O(1) nothrow
+	T const &operator[](size_t i) const
+	{
+		return _data[i];
+	}
 
-    bool empty() const;                     // O(1) nothrow
+	T *data()
+	{
+		return _data;
+	}
 
-    size_t capacity() const;                // O(1) nothrow
-    void reserve(size_t);                   // O(N) strong
-    void shrink_to_fit();                   // O(N) strong
+	T const *data() const
+	{
+		return _data;
+	}
 
-    void clear();                           // O(N) nothrow
+	size_t size() const
+	{
+		return _size;
+	}
 
-    void swap(vector&);                     // O(1) nothrow
+	T &front()
+	{
+		return _data[0];
+	}
 
-    iterator begin();                       // O(1) nothrow
-    iterator end();                         // O(1) nothrow
+	T const &front() const
+	{
+		return _data[0];
+	}
 
-    const_iterator begin() const;           // O(1) nothrow
-    const_iterator end() const;             // O(1) nothrow
+	T &back()
+	{
+		return _data[_size - 1];
+	}
 
-    iterator insert(iterator pos, T const&); // O(N) weak
-    iterator insert(const_iterator pos, T const&); // O(N) weak
+	T const &back() const
+	{
+		return _data[_size - 1];
+	}
 
-    iterator erase(iterator pos);           // O(N) weak
-    iterator erase(const_iterator pos);     // O(N) weak
+	void push_back(T val)
+	{
+		ensure_capacity();
+		new(_data + _size) T(val);
+		_size++;
+	}
 
-    iterator erase(iterator first, iterator last); // O(N) weak
-    iterator erase(const_iterator first, const_iterator last); // O(N) weak
+	void pop_back()
+	{
+		destroy(end() - 1, end());
+		_size--;
+	}
 
+	bool empty() const
+	{
+		return _size == 0;
+	}
+
+	size_t capacity() const
+	{
+		return _capacity;
+	}
+
+	void reserve(size_t new_cap)
+	{
+		if (new_cap > _capacity) {
+			T *temp_data = static_cast<T *>(operator new(new_cap * sizeof(T)));
+			size_t temp_size = 0;
+			try {
+				for (; temp_size < _size; ++temp_size) {
+					new(temp_data + temp_size) T(_data[temp_size]);
+				}
+			} catch (...) {
+				destroy(temp_data, temp_data + temp_size);
+				operator delete(temp_data);
+				throw;
+			}
+
+			destroy(begin(), end());
+			operator delete(_data);
+			_data = temp_data;
+			_capacity = new_cap;
+		}
+	}
+
+	void shrink_to_fit()
+	{
+		if (_capacity > _size) {
+			vector<T> temp(*this);
+			swap(temp);
+		}
+	}
+
+	void clear()
+	{
+		destroy(begin(), end());
+		_size = 0;
+	}
+
+	void swap(vector &other)
+	{
+		std::swap(_data, other._data);
+		std::swap(_size, other._size);
+		std::swap(_capacity, other._capacity);
+	}
+
+	iterator begin()
+	{
+		return _data;
+	}
+
+	iterator end()
+	{
+		return _data + _size;
+	}
+
+	const_iterator begin() const
+	{
+		return _data;
+	}
+
+	const_iterator end() const
+	{
+		return _data + _size;
+	}
+
+	const_iterator insert(const_iterator pnt, T val)
+	{
+		if (pnt == end()) {
+			push_back(val);
+			return end() - 1;
+		}
+		if (!empty()) {
+			size_t ind = pnt - _data;
+			push_back(back());
+			auto pos = _data + ind;
+			for (auto it = end() - 2; it > pos; --it) {
+				*it = *(it - 1);
+			}
+			(*pos) = val;
+			return pos;
+		}
+		push_back(val);
+		return _data;
+	}
+
+	const_iterator erase(const_iterator pos)
+	{
+		return erase(pos, pos + 1);
+	}
+
+	const_iterator erase(const_iterator start, const_iterator finish)
+	{
+		size_t delta = finish - start;
+		if (delta <= 0) return start;
+		for (auto it = const_cast<iterator>(start); it < end() - delta; ++it) {
+			*it = *(it + delta);
+		}
+		destroy(end() - delta, end());
+		_size -= delta;
+		return start;
+	}
 private:
-    size_t increase_capacity() const;
-    void push_back_realloc(T const&);
-    void new_buffer(size_t new_capacity);
+	T *_data;
+	size_t _size;
+	size_t _capacity;
 
-private:
-    T* data_;
-    size_t size_;
-    size_t capacity_;
+	void ensure_capacity()
+	{
+		if (_size < _capacity) return;
+		if (_capacity == 0) {
+			reserve(4);
+		}
+		else {
+			reserve(_capacity * 2);
+		}
+	}
+
+	void destroy(const_iterator pos)
+	{
+		destroy(pos, pos + 1);
+	}
+
+	void destroy(const_iterator first, const_iterator last)
+	{
+		for (auto it = first; it != last; ++it) {
+			(*it).~T();
+		}
+	}
 };
+
+template<typename T>
+void swap(vector<T> &a, vector<T> &b)
+{
+	a.swap(b);
+}
