@@ -13,21 +13,21 @@ _start:
 
 
 
-                sub				rsp, 2 * 128 * 8	; выделяем место под ответ
-                mov				r10, rsp
+                sub		rsp, 2 * 128 * 8	; выделяем место под ответ
+                mov		r10, rsp
                 
-                push			rdi
-                mov				rcx, 256
-                mov				rdi, r10
-                call			set_zero			; нужно занулить место под ответ
-                mov				rcx, 128
-                pop				rdi
+                push		rdi
+                mov		rcx, 256
+                mov		rdi, r10
+                call		set_zero		; нужно занулить место под ответ
+                mov		rcx, 128
+                pop		rdi
 
                 call            mul_long_long
 
 
-                mov				rcx, 256			; подготовим регистры и выведем ответ
-                mov				rdi, r10
+                mov		rcx, 256		; подготовим регистры и выведем ответ
+                mov		rdi, r10
                 call            write_long
 
                 mov             al, 0x0a
@@ -46,65 +46,65 @@ mul_long_long:
                 push            rsi
                 push            rcx
 
-                push 			rax
-                push			rbx
-                push 			rbp
-                push			r8
-                push 			r9
+                push 		rax
+                push		rbx
+                push 		rbp
+                push		r8
+                push 		r9
 
 ; далее просто перебираем разряды обоих чисел, умножаем и прибавляем к результату
 
-                xor				r8, r8
+                xor		r8, r8
 loop_outer:	
 
 
-                xor				r9, r9
+                xor		r9, r9
 loop_inner:
 
                 ;
                 ; [r10 + 8 * (r8 + r9)] += [rdi + 8 * r8] * [rsi + 8 * r9] грубо говоря
                 ;
 
-                lea				rax, [rdi + 8 * r8]
-                mov				rax, [rax]			; грубо превратили индекс в значение, ну да ладно
-                lea				rbx, [rsi + 8 * r9]
-                mov				rbx, [rbx]
+                lea		rax, [rdi + 8 * r8]
+                mov		rax, [rax]		; грубо превратили индекс в значение, ну да ладно
+                lea		rbx, [rsi + 8 * r9]
+                mov		rbx, [rbx]
 
 
                                                 	; high:low
-                mul				rbx					;  rdx:rax = rax * rbx
+                mul		rbx					;  rdx:rax = rax * rbx
 		
-                mov				rbp, r8
-                add				rbp, r9 			; rbp = r8 + r9	
-                lea				rbp, [r10 + 8 * rbp]; rbp - индекс, куда надо прибавлять
+                mov		rbp, r8
+                add		rbp, r9 		; rbp = r8 + r9	
+                lea		rbp, [r10 + 8 * rbp]    ; rbp - индекс, куда надо прибавлять
 
 
-                add				[rbp], rax			; прибавляем и ставим CF
-                lea				rbp, [rbp + 8]
-	            adc				[rbp], rdx			; снова керри флаг
+                add		[rbp], rax		; прибавляем и ставим CF
+                lea		rbp, [rbp + 8]
+	        adc		[rbp], rdx		; снова керри флаг
 while_carry:
-                jnc				end_of_while		; если CF = 0 то конец
-				lea				rbp, [rbp + 8]
-				adc				QWORD [rbp], 0		
-				jmp 			while_carry
+                jnc		end_of_while		; если CF = 0 то конец
+		lea		rbp, [rbp + 8]
+		adc		QWORD [rbp], 0		
+		jmp 		while_carry
 end_of_while:
 		
 
-				inc				r9
-				cmp				rcx, r9
-				ja				loop_inner
+		inc		r9
+		cmp		rcx, r9
+		ja		loop_inner
 
 
-				inc				r8
-				cmp				rcx, r8
-				ja				loop_outer
+		inc		r8
+		cmp		rcx, r8
+		ja		loop_outer
 
 
-				pop				r9
-				pop 			r8
-				pop				rbp
-				pop				rbx
-				pop				rax
+		pop		r9
+		pop 		r8
+		pop		rbp
+		pop		rbx
+		pop		rax
 
                 pop             rcx
                 pop             rsi
