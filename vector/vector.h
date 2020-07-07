@@ -182,7 +182,7 @@ public:
 		return data_ + size_;
 	}
 
-	iterator insert(iterator ptr, T const &val)
+	const_iterator insert(const_iterator ptr, T const &val)
 	{
 		ptrdiff_t ind = ptr - begin();
 		push_back(val);
@@ -193,24 +193,22 @@ public:
 		return ptr;
 	}
 
-	iterator erase(iterator pos)
+	const_iterator erase(const_iterator pos)
 	{
 		return erase(pos, pos + 1);
 	}
 
-	iterator erase(iterator first, iterator last)
+	const_iterator erase(const_iterator first, const_iterator last)
 	{
 		ptrdiff_t delta = last - first;
 		if (delta <= 0) return last;
-		for (auto it = first; it < end() - delta; ++it) {
+		for (auto it = first - data_ + data_; it < end() - delta; ++it) {  // цинично, но почему нет
 			std::swap(*it, *(it + delta));
 		}
 		destroy(end() - delta, end());
 		size_ -= delta;
 
-		iterator res = first;
-		if (res == end() - 1 || last == end() + delta) return end();
-		return res;
+		return first;
 	}
 private:
 	T *data_;
