@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <algorithm>
 
@@ -18,24 +19,26 @@ big_integer::big_integer()
 big_integer::big_integer(big_integer const &other) = default;
 
 big_integer::big_integer(int a)
-	: value(1, std::abs(static_cast<int64_t>(a))), is_inf_1(false)
+	: value(1, std::abs(static_cast<int64_t>(a))), inf_1_after_last_digit(false)
 {
-	if (a < 0) *this = -(*this);
+	if (a < 0) {
+		*this = -(*this);
+	}
 }
 
 big_integer::big_integer(uint32_t a)
-	: value(1, a), is_inf_1(false)
+	: value(1, a), inf_1_after_last_digit(false)
 {}
 
 big_integer::big_integer(uint64_t a)
-	: value(1, to32(a % BASE)), is_inf_1(false)
+	: value(1, to32(a % BASE)), inf_1_after_last_digit(false)
 {
 	value.push_back(to32(a / BASE));
 	shrink_to_fit();
 }
 
 big_integer::big_integer(uint128_t a)
-	: is_inf_1(false)
+	: inf_1_after_last_digit(false)
 {
 	do {
 		value.push_back(a % BASE128);
@@ -48,7 +51,9 @@ big_integer::big_integer(uint128_t a)
 big_integer::big_integer(std::string const &str)
 	: big_integer()
 {
-	if (str.empty()) return;
+	if (str.empty()) {
+		return;
+	}
 	size_t i = 0;
 	if (str[i] == '-') i++;
 	for (; i < str.length(); ++i) {
@@ -56,14 +61,15 @@ big_integer::big_integer(std::string const &str)
 		*this *= 10;
 		*this += to_digit(str[i] - '0');
 	}
-	if (str[0] == '-') *this = -(*this);
+	if (str[0] == '-') {
+		*this = -(*this);
+	}
 }
 
 big_integer::~big_integer() = default;
 
 uint32_t big_integer::get(size_t i) const
 {
-//	std::cout << "true sz : " << value.size() << " true ind : " << i << '\n';
 	if (i < value.size()) {
 		return value[i];
 	}
@@ -72,15 +78,15 @@ uint32_t big_integer::get(size_t i) const
 
 uint32_t big_integer::get_inf_digit() const
 {
-	return is_inf_1 ? MAX_DIGIT : MIN_DIGIT;
+	return inf_1_after_last_digit ? MAX_DIGIT : MIN_DIGIT;
 }
 
 // удаляет лишние старшие цифры, которые состоят из одних нулей или единиц и совпадают с бесконечными условными лимбами
 void big_integer::shrink_to_fit()
 {
 	while (value.size() > 1) {
-		if ((value.back() == MIN_DIGIT && !is_inf_1)
-			|| (value.back() == MAX_DIGIT && is_inf_1)) {
+		if ((value.back() == MIN_DIGIT && !inf_1_after_last_digit)
+			|| (value.back() == MAX_DIGIT && inf_1_after_last_digit)) {
 			value.pop_back();
 		}
 		else {
@@ -91,9 +97,11 @@ void big_integer::shrink_to_fit()
 
 big_integer &big_integer::operator=(big_integer const &rhs)
 {
-	if (this == &rhs) return *this;
+	if (this == &rhs) {
+		return *this;
+	}
 	value = rhs.value;
-	is_inf_1 = rhs.is_inf_1;
+	inf_1_after_last_digit = rhs.inf_1_after_last_digit;
 	return *this;
 }
 
@@ -108,22 +116,24 @@ big_integer &big_integer::operator+=(big_integer const &b)
 		carry = sum / BASE;
 	}
 	// теперь решим вопрос с бесконечными единицами, нулями и carry
-	bool one_is_1 = (is_inf_1 && !b.is_inf_1) || (!is_inf_1 && b.is_inf_1);
-	if ((!is_inf_1 && !b.is_inf_1 && carry == 0) || (one_is_1 && carry > 0)) {
-		is_inf_1 = false;
+	bool one_is_1 = (inf_1_after_last_digit && !b.inf_1_after_last_digit)
+		|| (!inf_1_after_last_digit && b.inf_1_after_last_digit);
+	if ((!inf_1_after_last_digit && !b.inf_1_after_last_digit && carry == 0) || (one_is_1 && carry > 0)) {
+		inf_1_after_last_digit = false;
 	}
-	else if ((one_is_1 && carry == 0) || (is_inf_1 && b.is_inf_1 && carry > 0)) {
-		is_inf_1 = true;
+	else if ((one_is_1 && carry == 0) || (inf_1_after_last_digit && b.inf_1_after_last_digit && carry > 0)) {
+		inf_1_after_last_digit = true;
 	}
-	else if (is_inf_1 && b.is_inf_1 && carry == 0) {  // a.is_inf_1 and b.is_inf_1
+	else if (inf_1_after_last_digit && b.inf_1_after_last_digit
+		&& carry == 0) {  // a.inf_1_after_last_digit and b.inf_1_after_last_digit
 		value.resize(size_ + 1);
 		value[size_] = MAX_DIGIT - 1;
-		is_inf_1 = true;
+		inf_1_after_last_digit = true;
 	}
-	else {  // !a.is_inf_1 && !b.is_inf_1 && carry > 0
+	else {  // !a.inf_1_after_last_digit && !b.inf_1_after_last_digit && carry > 0
 		value.resize(size_ + 1);
 		value[size_] = MIN_DIGIT + 1;
-		is_inf_1 = false;
+		inf_1_after_last_digit = false;
 	}
 	shrink_to_fit();
 	return *this;
@@ -139,14 +149,11 @@ big_integer big_integer::naive_mul(big_integer const &b)
 {
 	big_integer res;
 	res.value.resize(size() + b.size(), 0u);
-//	std::cout << size() + b.size() << '\n';
 	for (size_t i = 0; i < size(); ++i) {
 		uint64_t sum = 0, carry = 0;
 		for (size_t j = 0; j < b.size() || carry > 0; ++j) {
 			sum = res.get(i + j) + carry +
 				to64(get(i)) * to64(b.get(j));
-//			std::cout << "NEED SIZE : " << res.value.size() << std::endl;
-//			std::cout << "NEED IND  : " << i + j << '\n';
 			res.value[i + j] = to32(sum % BASE);
 			carry = sum / BASE;
 		}
@@ -157,18 +164,25 @@ big_integer big_integer::naive_mul(big_integer const &b)
 
 big_integer &big_integer::operator*=(big_integer const &rhs)
 {
-	bool sign = (is_inf_1 && !rhs.is_inf_1) || (!is_inf_1 && rhs.is_inf_1);
-	if (is_inf_1) *this = -(*this);
-	naive_mul(rhs.is_inf_1 ? -rhs : rhs);
-	if (sign) *this = -(*this);
+	bool sign = (inf_1_after_last_digit && !rhs.inf_1_after_last_digit)
+		|| (!inf_1_after_last_digit && rhs.inf_1_after_last_digit);
+	if (inf_1_after_last_digit) *this = -(*this);
+	naive_mul(rhs.inf_1_after_last_digit ? -rhs : rhs);
+	if (sign) {
+		*this = -(*this);
+	}
 	shrink_to_fit();
 	return *this;
 }
 
 big_integer big_integer::div_by_short(digit_t val)
 {
-	if (val == 0) throw std::runtime_error("division by zero");
-	if (*this == 0) return 0;
+	if (val == 0) {
+		throw std::runtime_error("division by zero");
+	}
+	if (*this == 0) {
+		return 0;
+	}
 	uint32_t carry = 0;
 	for (size_t i = size(); i > 0; --i) {
 		uint64_t tmp = (to64(carry) << 32u) + value[i - 1];
@@ -205,11 +219,21 @@ static bool normalised(digit_t a)
 
 big_integer big_integer::limb_div(big_integer const &rhs)
 {
-	if (rhs == 0) throw std::runtime_error("division by zero");
-	if (*this < rhs) return *this = 0;
-	if (*this == rhs) return *this = 1;
-	if (rhs.size() == 1) return div_by_short(rhs.value[0]);
-	if (size() <= 4) return div128(rhs);
+	if (rhs == 0) {
+		throw std::runtime_error("division by zero");
+	}
+	if (*this < rhs) {
+		return *this = 0;
+	}
+	if (*this == rhs) {
+		return *this = 1;
+	}
+	if (rhs.size() == 1) {
+		return div_by_short(rhs.value[0]);
+	}
+	if (size() <= 4) {
+		return div128(rhs);
+	}
 
 	big_integer u = *this;
 	big_integer d = rhs;
@@ -218,7 +242,9 @@ big_integer big_integer::limb_div(big_integer const &rhs)
 		d <<= 1;
 		shift++;
 	}
-	if (shift > 0) return (*this <<= shift) /= d;
+	if (shift > 0) {
+		return (*this <<= shift) /= d;
+	}
 
 	ssize_t m = u.size(), n = d.size();
 	ssize_t k = m - n;
@@ -253,11 +279,14 @@ big_integer big_integer::limb_div(big_integer const &rhs)
 
 big_integer &big_integer::operator/=(big_integer const &rhs)
 {
-	bool sign = (is_inf_1 && !rhs.is_inf_1) || (!is_inf_1 && rhs.is_inf_1);
-	if (is_inf_1) *this = -(*this);
+	bool sign = (inf_1_after_last_digit && !rhs.inf_1_after_last_digit)
+		|| (!inf_1_after_last_digit && rhs.inf_1_after_last_digit);
+	if (inf_1_after_last_digit) *this = -(*this);
 
-	limb_div(rhs.is_inf_1 ? -rhs : rhs);
-	if (sign) *this = -(*this);
+	limb_div(rhs.inf_1_after_last_digit ? -rhs : rhs);
+	if (sign) {
+		*this = -(*this);
+	}
 
 	shrink_to_fit();
 	return *this;
@@ -275,7 +304,7 @@ big_integer &big_integer::operator&=(big_integer const &rhs)
 	for (size_t i = 0; i < size_; ++i) {
 		value[i] = get(i) & rhs.get(i);
 	}
-	is_inf_1 = is_inf_1 && rhs.is_inf_1;
+	inf_1_after_last_digit = inf_1_after_last_digit && rhs.inf_1_after_last_digit;
 	shrink_to_fit();
 	return *this;
 }
@@ -287,7 +316,7 @@ big_integer &big_integer::operator|=(big_integer const &rhs)
 	for (size_t i = 0; i < size_; ++i) {
 		value[i] = get(i) | rhs.get(i);
 	}
-	is_inf_1 = is_inf_1 || rhs.is_inf_1;
+	inf_1_after_last_digit = inf_1_after_last_digit || rhs.inf_1_after_last_digit;
 	shrink_to_fit();
 	return *this;
 }
@@ -299,7 +328,8 @@ big_integer &big_integer::operator^=(big_integer const &rhs)
 	for (size_t i = 0; i < size_; ++i) {
 		value[i] = get(i) ^ rhs.get(i);
 	}
-	is_inf_1 = (!is_inf_1 && rhs.is_inf_1) || (is_inf_1 && !rhs.is_inf_1);
+	inf_1_after_last_digit = (!inf_1_after_last_digit && rhs.inf_1_after_last_digit)
+		|| (inf_1_after_last_digit && !rhs.inf_1_after_last_digit);
 	shrink_to_fit();
 	return *this;
 }
@@ -309,7 +339,9 @@ big_integer &big_integer::operator<<=(int rhs)
 	if (rhs < 0) return *this >>= -rhs;
 	block_shl(static_cast<size_t>(rhs) / 32);
 	uint32_t c = rhs % 32;
-	if (c == 0) return *this;
+	if (c == 0) {
+		return *this;
+	}
 	uint32_t d = (32 - c) % 32;
 	value.resize(size() + 1, get_inf_digit());
 	for (size_t i = size() - 1; i > 0; --i) {
@@ -354,7 +386,7 @@ big_integer big_integer::operator~() const
 	for (digit_t &digit : res.value) {
 		digit = ~digit;
 	}
-	res.is_inf_1 = !res.is_inf_1;
+	res.inf_1_after_last_digit = !res.inf_1_after_last_digit;
 	res.shrink_to_fit();
 	return res;
 }
@@ -425,25 +457,21 @@ big_integer operator^(big_integer a, big_integer const &b)
 
 void big_integer::block_shl(size_t cnt)
 {
-	storage_t new_value(cnt, 0);
+	std::vector<digit_t> new_value(cnt, 0);
 	for (digit_t &digit : value) {
 		new_value.push_back(digit);
 	}
-	value = new_value;
+	swap(value, new_value);
 }
 
 void big_integer::block_shr(size_t cnt)
 {
 	if (cnt < value.size()) {
-		storage_t new_value;
-		for (size_t i = cnt; i < value.size(); ++i) {
-			new_value.push_back(value[i]);
-		}
-		value = new_value;
+		value.erase(value.begin(), value.begin() + cnt);
 	}
 	else {
-		storage_t new_value(1, get_inf_digit());
-		value = new_value;
+		std::vector<digit_t> new_value(1, get(size()));
+		swap(value, new_value);
 	}
 }
 
@@ -464,22 +492,18 @@ size_t big_integer::size() const
 
 int big_integer::compare_to(big_integer const &other) const
 {
-	if (is_inf_1 != other.is_inf_1) {
-		if (is_inf_1) return -1;
-		return 1;
+	if (inf_1_after_last_digit != other.inf_1_after_last_digit) {
+		return inf_1_after_last_digit ? -1 : 1;
 	}
 	int res = 0;
 	if (size() != other.size()) {
-		if (size() < other.size()) res = -1;
-		else res = 1;
-		if (is_inf_1) res = -res;
-		return res;
+		res = size() < other.size() ? -1 : 1;
+		return inf_1_after_last_digit ? -res : res;
 	}
 	else {
-		for (size_t i = size(); i > 0; --i) {
-			if (value[i - 1] != other.value[i - 1]) {
-				if (value[i - 1] < other.value[i - 1]) res = -1;
-				else res = 1;
+		for (int64_t i = size() - 1; i >= 0; i--) {
+			if (value[i] != other.value[i]) {
+				res = value[i] < other.value[i] ? -1 : 1;
 				break;
 			}
 		}
@@ -524,9 +548,13 @@ std::string to_string(big_integer const &a)
 	while (tmp >= 0) {
 		res += std::to_string((tmp % 10).value[0]);
 		tmp /= 10;
-		if (tmp == 0) break;
+		if (tmp == 0) {
+			break;
+		}
 	}
-	if (a < 0) res += '-';
+	if (a < 0) {
+		res += '-';
+	}
 	std::reverse(res.begin(), res.end());
 	return res;
 }

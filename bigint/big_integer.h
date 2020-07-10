@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "optimal_storage.h"
 
 typedef unsigned __int128 uint128_t;
 
@@ -57,11 +56,8 @@ struct big_integer
 	friend std::string to_string(big_integer const &bi);
 
 private:
-
-	using storage_t = optimal_storage;
-
-	storage_t value;
-	bool is_inf_1;  // a.is_inf_1 == true <=> a < 0;
+	std::vector<digit_t> value;
+	bool inf_1_after_last_digit;  // a.inf_1_after_last_digit == true <=> a < 0;
 
 	digit_t get(size_t i) const;
 	digit_t get_inf_digit() const;
@@ -69,6 +65,7 @@ private:
 	void block_shl(size_t cnt);
 	void block_shr(size_t cnt);
 };
+
 
 big_integer operator+(big_integer a, big_integer const &b);
 big_integer operator-(big_integer a, big_integer const &b);
