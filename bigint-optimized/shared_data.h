@@ -12,9 +12,12 @@ using digit_t = uint32_t;
 
 struct shared_data {
 public:
+	size_t ref_cnt;
+	std::vector<digit_t> buffer;
+
 	shared_data(size_t, digit_t);
 	explicit shared_data(std::vector<digit_t> const &);
-	~shared_data();
+	~shared_data() = default;
 	void resize(size_t i);
 	void push_back(digit_t);
 	void pop_back();
@@ -25,9 +28,6 @@ public:
 	void dec();
 	void inc();
 	shared_data *unshare();
-private:
-	size_t ref_cnt;
-	std::vector<digit_t> buffer;
 };
 
 #endif //SHARED_DATA_H
