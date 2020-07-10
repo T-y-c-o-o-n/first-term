@@ -11,22 +11,22 @@ struct optimal_storage {
 
 public:
 
-	using iterator = digit_t *;
-	using const_iterator = digit_t const *;
+	using iterator = uint32_t *;
+	using const_iterator = uint32_t const *;
 
 	optimal_storage();
-	optimal_storage(size_t, digit_t);
+	optimal_storage(size_t, uint32_t);
 	optimal_storage(optimal_storage const &);
 	optimal_storage &operator=(optimal_storage const &);
 	~optimal_storage();
 	size_t size() const;
 	void resize(size_t);
-	void resize(size_t, digit_t);
-	digit_t &operator[](size_t i);
-	digit_t const &operator[](size_t i) const;
-	digit_t &back();
-	digit_t const &back() const;
-	void push_back(digit_t);
+	void resize(size_t, uint32_t);
+	uint32_t &operator[](size_t i);
+	uint32_t const &operator[](size_t i) const;
+	uint32_t &back();
+	uint32_t const &back() const;
+	void push_back(uint32_t);
 	void pop_back();
 	const_iterator begin() const;
 	const_iterator end() const;
