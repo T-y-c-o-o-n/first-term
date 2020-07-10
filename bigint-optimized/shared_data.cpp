@@ -6,21 +6,13 @@
 #include <iostream>
 
 shared_data::shared_data(size_t size, digit_t digit)
-	: ref_cnt(1)
-{
-	buffer = std::vector<digit_t>(size, digit);
-}
+	: ref_cnt(1), buffer(std::vector<digit_t>(size, digit))
+{}
 
 shared_data::shared_data(std::vector<digit_t> const &digits)
-	: ref_cnt(1)
-{
-	buffer = std::vector<digit_t>(digits);
-}
+	: ref_cnt(1), buffer(std::vector<digit_t>(digits))
+{}
 
-shared_data::~shared_data()
-{
-
-}
 
 void shared_data::resize(size_t new_sz)
 {
@@ -72,8 +64,10 @@ void shared_data::inc()
 
 shared_data *shared_data::unshare()
 {
-	if (ref_cnt == 1) return this;
+	if (ref_cnt == 1) {
+		return this;
+	}
 	auto *new_data = new shared_data(buffer);
-	this -> dec();
+	dec();
 	return new_data;
 }
