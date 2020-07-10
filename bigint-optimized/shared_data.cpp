@@ -5,12 +5,12 @@
 #include "shared_data.h"
 #include <iostream>
 
-shared_data::shared_data(size_t size, digit_t digit)
-	: ref_cnt(1), buffer(std::vector<digit_t>(size, digit))
+shared_data::shared_data(size_t size, uint32_t digit)
+	: ref_cnt(1), buffer(std::vector<uint32_t>(size, digit))
 {}
 
-shared_data::shared_data(std::vector<digit_t> const &digits)
-	: ref_cnt(1), buffer(std::vector<digit_t>(digits))
+shared_data::shared_data(std::vector<uint32_t> const &digits)
+	: ref_cnt(1), buffer(std::vector<uint32_t>(digits))
 {}
 
 
@@ -19,27 +19,27 @@ void shared_data::resize(size_t new_sz)
 	buffer.resize(new_sz);
 }
 
-digit_t *shared_data::data()
+uint32_t *shared_data::data()
 {
 	return buffer.data();
 }
 
-std::vector<digit_t> const &shared_data::get_buffer() const
+std::vector<uint32_t> const &shared_data::get_buffer() const
 {
 	return buffer;
 }
 
-digit_t const &shared_data::operator[](size_t i) const
+uint32_t const &shared_data::operator[](size_t i) const
 {
 	return buffer[i];
 }
 
-digit_t &shared_data::operator[](size_t i)
+uint32_t &shared_data::operator[](size_t i)
 {
 	return buffer[i];
 }
 
-void shared_data::push_back(digit_t digit)
+void shared_data::push_back(uint32_t digit)
 {
 	buffer.push_back(digit);
 }

@@ -11,7 +11,7 @@ optimal_storage::optimal_storage()
 	: size_(0), is_small(false)
 {}
 
-optimal_storage::optimal_storage(size_t size, digit_t digit)
+optimal_storage::optimal_storage(size_t size, uint32_t digit)
 	: size_(size), is_small(size <= MAX_STATIC_DATA_SIZE)
 {
 	if (small()) {
@@ -70,13 +70,13 @@ bool optimal_storage::small() const
 	return is_small;
 }
 
-void optimal_storage::resize(size_t new_sz, digit_t digit)
+void optimal_storage::resize(size_t new_sz, uint32_t digit)
 {
 	assert (new_sz > size_);
 
 	if (new_sz <= MAX_STATIC_DATA_SIZE) {
 		for (size_t i = size_; i < new_sz; ++i) {
-			static_data[i] = 0;
+			static_data[i] = digit;
 		}
 		size_ = new_sz;
 		return;
@@ -92,7 +92,7 @@ void optimal_storage::resize(size_t new_sz, digit_t digit)
 		return;
 	}
 	else {  // small->big
-		std::vector<digit_t> temp(static_data, static_data + size_);
+		std::vector<uint32_t> temp(static_data, static_data + size_);
 		dynamic_data = new shared_data(temp);
 		dynamic_data->resize(new_sz);
 		size_ = new_sz;
@@ -110,7 +110,7 @@ void optimal_storage::resize(size_t new_sz)
 	resize(new_sz, 0);
 }
 
-digit_t &optimal_storage::operator[](size_t i)
+uint32_t &optimal_storage::operator[](size_t i)
 {
 	assert (i < size_);
 
@@ -121,7 +121,7 @@ digit_t &optimal_storage::operator[](size_t i)
 	return (*dynamic_data)[i];
 }
 
-digit_t const &optimal_storage::operator[](size_t i) const
+uint32_t const &optimal_storage::operator[](size_t i) const
 {
 	assert (i < size_);
 
@@ -131,17 +131,17 @@ digit_t const &optimal_storage::operator[](size_t i) const
 	return (*dynamic_data)[i];
 }
 
-digit_t const &optimal_storage::back() const
+uint32_t const &optimal_storage::back() const
 {
 	return (*this)[size_ - 1];
 }
 
-digit_t &optimal_storage::back()
+uint32_t &optimal_storage::back()
 {
 	return (*this)[size_ - 1];
 }
 
-void optimal_storage::push_back(digit_t digit)
+void optimal_storage::push_back(uint32_t digit)
 {
 	if (size_ < MAX_STATIC_DATA_SIZE) {
 		static_data[size_++] = digit;
@@ -166,7 +166,7 @@ void optimal_storage::pop_back()
 
 optimal_storage::const_iterator optimal_storage::begin() const
 {
-	if (small()) return reinterpret_cast<const_iterator>(&static_data);
+	if (small()) return static_data;
 	return dynamic_data->data();
 }
 
