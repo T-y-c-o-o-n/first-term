@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <vector>
 #include <iostream>
 #include <algorithm>
 
@@ -53,7 +52,6 @@ big_integer::big_integer(std::string const &str)
 	size_t i = 0;
 	if (str[i] == '-') i++;
 	for (; i < str.length(); ++i) {
-		if (str[i] == '\'') continue;
 		if (str[i] < '0' || str[i] > '9') throw;
 		*this *= 10;
 		*this += to_digit(str[i] - '0');
@@ -65,6 +63,7 @@ big_integer::~big_integer() = default;
 
 uint32_t big_integer::get(size_t i) const
 {
+//	std::cout << "true sz : " << value.size() << " true ind : " << i << '\n';
 	if (i < value.size()) {
 		return value[i];
 	}
@@ -140,11 +139,14 @@ big_integer big_integer::naive_mul(big_integer const &b)
 {
 	big_integer res;
 	res.value.resize(size() + b.size(), 0u);
+//	std::cout << size() + b.size() << '\n';
 	for (size_t i = 0; i < size(); ++i) {
 		uint64_t sum = 0, carry = 0;
 		for (size_t j = 0; j < b.size() || carry > 0; ++j) {
 			sum = res.get(i + j) + carry +
 				to64(get(i)) * to64(b.get(j));
+//			std::cout << "NEED SIZE : " << res.value.size() << std::endl;
+//			std::cout << "NEED IND  : " << i + j << '\n';
 			res.value[i + j] = to32(sum % BASE);
 			carry = sum / BASE;
 		}
@@ -423,21 +425,25 @@ big_integer operator^(big_integer a, big_integer const &b)
 
 void big_integer::block_shl(size_t cnt)
 {
-	std::vector<digit_t> new_value(cnt, 0);
+	storage_t new_value(cnt, 0);
 	for (digit_t &digit : value) {
 		new_value.push_back(digit);
 	}
-	swap(value, new_value);
+	value = new_value;
 }
 
 void big_integer::block_shr(size_t cnt)
 {
 	if (cnt < value.size()) {
-		value.erase(value.begin(), value.begin() + cnt);
+		storage_t new_value;
+		for (size_t i = cnt; i < value.size(); ++i) {
+			new_value.push_back(value[i]);
+		}
+		value = new_value;
 	}
 	else {
-		std::vector<digit_t> new_value(1, get(size()));
-		swap(value, new_value);
+		storage_t new_value(1, get_inf_digit());
+		value = new_value;
 	}
 }
 
