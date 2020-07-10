@@ -15,9 +15,10 @@ optimal_storage::optimal_storage(size_t size, uint32_t digit)
 	: size_(size), is_small(size <= MAX_STATIC_DATA_SIZE)
 {
 	if (small()) {
-		for (size_t i = 0; i < size_; ++i) {
-			static_data[i] = digit;
-		}
+//		for (size_t i = 0; i < size_; ++i) {
+//			static_data[i] = digit;
+//		}
+		std::fill(static_data, static_data + size_, digit);
 	} else {
 		dynamic_data = new shared_data(size, digit);
 	}
@@ -72,12 +73,13 @@ bool optimal_storage::small() const
 
 void optimal_storage::resize(size_t new_sz, uint32_t digit)
 {
-	assert (new_sz > size_);
+	assert (new_sz >= size_);
 
 	if (new_sz <= MAX_STATIC_DATA_SIZE) {
-		for (size_t i = size_; i < new_sz; ++i) {
-			static_data[i] = digit;
-		}
+//		for (size_t i = size_; i < new_sz; ++i) {
+//			static_data[i] = digit;
+//		}
+		std::fill(static_data + size_, static_data + new_sz, digit);
 		size_ = new_sz;
 		return;
 	}
