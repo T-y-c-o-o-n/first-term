@@ -6,19 +6,16 @@
 #include <algorithm>
 
 template<typename T>
-struct vector
-{
-public:
+struct vector {
+  public:
 	using iterator = T *;
 	using const_iterator = T const *;
 
 	vector()
-		: data_(nullptr), size_(0), capacity_(0)
-	{}
+		: data_(nullptr), size_(0), capacity_(0) {}
 
 	vector(vector const &other)
-		: vector()
-	{
+		: vector() {
 		if (!other.empty()) {
 			vector temp;
 			temp.reserve(other.size());
@@ -29,97 +26,82 @@ public:
 		}
 	}
 
-	vector &operator=(vector const &rhs)
-	{
-		if (this == &rhs) return *this;
+	vector &operator=(vector const &rhs) {
+		if (this == &rhs) {
+			return *this;
+		}
 		vector temp(rhs);
 		swap(temp);
 		return *this;
 	}
 
-	~vector()
-	{
+	~vector() {
 		clear();
 		operator delete(data_);
 	}
 
-	T &operator[](size_t i)
-	{
+	T &operator[](size_t i) {
 		return data_[i];
 	}
 
-	T const &operator[](size_t i) const
-	{
+	T const &operator[](size_t i) const {
 		return data_[i];
 	}
 
-	T *data()
-	{
+	T *data() {
 		return data_;
 	}
 
-	T const *data() const
-	{
+	T const *data() const {
 		return data_;
 	}
 
-	size_t size() const
-	{
+	size_t size() const {
 		return size_;
 	}
 
-	T &front()
-	{
+	T &front() {
 		return data_[0];
 	}
 
-	T const &front() const
-	{
+	T const &front() const {
 		return data_[0];
 	}
 
-	T &back()
-	{
+	T &back() {
 		return data_[size_ - 1];
 	}
 
-	T const &back() const
-	{
+	T const &back() const {
 		return data_[size_ - 1];
 	}
 
-	void push_back(T const &val)
-	{
+	void push_back(T const &val) {
 		if (begin() <= &val && &val < end()) {
 			ptrdiff_t ind = &val - begin();
 			ensure_capacity();
 			new(data_ + size_) T(data_[ind]);
-		}
-		else {
+		} else {
 			ensure_capacity();
 			new(data_ + size_) T(val);
 		}
 		size_++;
 	}
 
-	void pop_back()
-	{
+	void pop_back() {
 		destroy(end() - 1);
 		size_--;
 	}
 
-	bool empty() const
-	{
+	bool empty() const {
 		return size_ == 0;
 	}
 
-	size_t capacity() const
-	{
+	size_t capacity() const {
 		return capacity_;
 	}
 
-	void reserve(size_t new_cap)
-	{
+	void reserve(size_t new_cap) {
 		if (new_cap > capacity_) {
 			T *temp_data = static_cast<T *>(operator new(new_cap * sizeof(T)));
 			size_t temp_size = 0;
@@ -141,49 +123,41 @@ public:
 		}
 	}
 
-	void shrink_to_fit()
-	{
+	void shrink_to_fit() {
 		if (capacity_ > size_) {
 			vector temp(*this);
 			swap(temp);
 		}
 	}
 
-	void clear()
-	{
+	void clear() {
 		destroy(begin(), end());
 		size_ = 0;
 	}
 
-	void swap(vector &other)
-	{
+	void swap(vector &other) {
 		std::swap(data_, other.data_);
 		std::swap(size_, other.size_);
 		std::swap(capacity_, other.capacity_);
 	}
 
-	iterator begin()
-	{
+	iterator begin() {
 		return data_;
 	}
 
-	iterator end()
-	{
+	iterator end() {
 		return data_ + size_;
 	}
 
-	const_iterator begin() const
-	{
+	const_iterator begin() const {
 		return data_;
 	}
 
-	const_iterator end() const
-	{
+	const_iterator end() const {
 		return data_ + size_;
 	}
 
-	const_iterator insert(const_iterator ptr, T const &val)
-	{
+	const_iterator insert(const_iterator ptr, T const &val) {
 		ptrdiff_t ind = ptr - begin();
 		push_back(val);
 		ptr = begin() + ind;
@@ -193,15 +167,15 @@ public:
 		return ptr;
 	}
 
-	const_iterator erase(const_iterator pos)
-	{
+	const_iterator erase(const_iterator pos) {
 		return erase(pos, pos + 1);
 	}
 
-	const_iterator erase(const_iterator first, const_iterator last)
-	{
+	const_iterator erase(const_iterator first, const_iterator last) {
 		ptrdiff_t delta = last - first;
-		if (delta <= 0) return last;
+		if (delta <= 0) {
+			return last;
+		}
 		for (auto it = first - data_ + data_; it < end() - delta; ++it) {  // цинично, но почему нет
 			std::swap(*it, *(it + delta));
 		}
@@ -210,29 +184,27 @@ public:
 
 		return first;
 	}
-private:
+  private:
 	T *data_;
 	size_t size_;
 	size_t capacity_;
 
-	void ensure_capacity()
-	{
-		if (size_ < capacity_) return;
+	void ensure_capacity() {
+		if (size_ < capacity_) {
+			return;
+		}
 		if (capacity_ == 0) {
 			reserve(4);
-		}
-		else {
+		} else {
 			reserve(capacity_ * 2);
 		}
 	}
 
-	void destroy(const_iterator ptr)
-	{
+	void destroy(const_iterator ptr) {
 		ptr->~T();
 	}
 
-	void destroy(const_iterator first, const_iterator last)
-	{
+	void destroy(const_iterator first, const_iterator last) {
 		for (auto it = last; it != first; --it) {
 			(it - 1)->~T();
 		}
@@ -240,8 +212,7 @@ private:
 };
 
 template<typename T>
-void swap(vector<T> &a, vector<T> &b)
-{
+void swap(vector<T> &a, vector<T> &b) {
 	a.swap(b);
 }
 
