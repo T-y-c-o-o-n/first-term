@@ -9,7 +9,7 @@
 
 struct optimal_storage {
 
-public:
+  public:
 
 	using iterator = uint32_t *;
 	using const_iterator = uint32_t const *;
@@ -31,9 +31,9 @@ public:
 	const_iterator begin() const;
 	const_iterator end() const;
 
-private:
+  private:
 
-	static size_t constexpr MAX_STATIC_DATA_SIZE = sizeof(void *) / sizeof(uint32_t);
+	static size_t constexpr MAX_STATIC_DATA_SIZE = sizeof(shared_data *) / sizeof(uint32_t);
 
 	size_t size_;
 	bool is_small;

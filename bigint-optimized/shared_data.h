@@ -8,9 +8,8 @@
 #include <cstdint>
 #include <vector>
 
-
 struct shared_data {
-public:
+  public:
 	size_t ref_cnt;
 	std::vector<uint32_t> buffer;
 
@@ -18,6 +17,7 @@ public:
 	explicit shared_data(std::vector<uint32_t> const &);
 	~shared_data() = default;
 	void resize(size_t i);
+	void resize(size_t i, uint32_t);
 	void push_back(uint32_t);
 	void pop_back();
 	uint32_t *data();
