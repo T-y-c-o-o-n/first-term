@@ -67,9 +67,7 @@ void optimal_storage::resize(size_t new_sz, uint32_t digit) {
 
 	if (is_small) {
 		if (new_sz > MAX_STATIC_DATA_SIZE) {  // static -> dynamic
-			std::vector<uint32_t> temp(static_data, static_data + size_);
-			dynamic_data = new shared_data(temp);
-			dynamic_data->resize(new_sz, digit);
+            dynamic_data = new shared_data(static_data, static_data + size_);
 			size_ = new_sz;
 			is_small = false;
 		} else {  // static

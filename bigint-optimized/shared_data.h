@@ -15,6 +15,7 @@ struct shared_data {
 
 	shared_data(size_t, uint32_t);
 	explicit shared_data(std::vector<uint32_t> const &);
+	shared_data(uint32_t *begin, uint32_t *end);
 	~shared_data() = default;
 	void resize(size_t i);
 	void resize(size_t i, uint32_t);

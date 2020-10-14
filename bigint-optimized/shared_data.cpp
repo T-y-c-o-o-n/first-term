@@ -11,6 +11,9 @@ shared_data::shared_data(size_t size, uint32_t digit)
 shared_data::shared_data(std::vector<uint32_t> const &digits)
 	: ref_cnt(1), buffer(std::vector<uint32_t>(digits)) {}
 
+shared_data::shared_data(uint32_t *begin, uint32_t *end)
+    : ref_cnt(1), buffer(begin, end) {}
+
 void shared_data::resize(size_t new_sz) {
 	buffer.resize(new_sz);
 }
